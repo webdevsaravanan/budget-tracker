@@ -1,0 +1,190 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <header class="px-6 pt-14 pb-6 fade-up">
+    <h1 class="text-3xl font-bold">Budget</h1>
+    <p class="text-sm text-muted mt-1">Manage your monthly spending limit</p>
+  </header>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="mx-4 space-y-4">
+      <div class="skeleton h-64 rounded-3xl"></div>
+      <div class="skeleton h-14 rounded-2xl"></div>
+    </div>
+  }
+
+  @if (!loading()) {
+
+    <!-- ── ACTIVE BUDGET CARD ── -->
+    @if (budget && !showForm()) {
+      <div class="mx-4 mb-4 fade-up" style="
+        background: linear-gradient(135deg, #1a2060 0%, #0f1535 100%);
+        border-radius: 1.5rem;
+        border: 1px solid rgba(94,123,255,0.25);
+        box-shadow: 0 8px 32px rgba(94,123,255,0.12);
+        padding: 1.5rem;
+      ">
+        <!-- Top row -->
+        <div class="flex items-start justify-between mb-5">
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-widest"
+               style="color:rgba(255,255,255,0.45)">Active Budget</p>
+            <p class="text-[40px] font-bold font-mono leading-tight tracking-tight mt-1">
+              {{ fmt(budget.amount) }}
+            </p>
+            <p class="text-xs mt-1" style="color:rgba(255,255,255,0.45)">
+              {{ budget.days }}-day budget · starts {{ startDateLabel }}
+            </p>
+          </div>
+          @if (stats) {
+            <span class="text-xs font-semibold px-3 py-1.5 rounded-full border"
+                  [class]="stats.isOver
+                    ? 'bg-debit/10 border-debit/30 text-debit'
+                    : 'bg-credit/10 border-credit/30 text-credit'">
+              {{ stats.isOver ? '⚠ Over Budget' : '✓ On Track' }}
+            </span>
+          }
+        </div>
+
+        <!-- Progress bar -->
+        @if (stats) {
+          <div class="mb-5">
+            <div class="flex justify-between text-xs mb-2" style="color:rgba(255,255,255,0.4)">
+              <span>{{ fmt(stats.totalDebit) }} spent</span>
+              <span>{{ stats.percentSpent | number:'1.0-1' }}%</span>
+            </div>
+            <div class="h-1.5 rounded-full overflow-hidden" style="background:rgba(255,255,255,0.07)">
+              <div class="h-full rounded-full transition-all duration-1000"
+                   [style.width.%]="stats.percentSpent"
+                   [style.background]="stats.isOver
+                     ? 'linear-gradient(90deg, #ff5f5f, #ff8c42)'
+                     : 'linear-gradient(90deg, #5e7bff, #7c5cfc)'">
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Stats grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="stat-box">
+            <div class="label">Days Left</div>
+            <div class="value">{{ stats?.daysLeft ?? '—' }}</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Safe / Day</div>
+            <div class="value" style="color:#32d583">
+              @if (stats) { {{ fmt(stats.safePerDay) }} } @else { — }
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Total Days</div>
+            <div class="value">{{ budget.days }}</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Remaining</div>
+            <div class="value">
+              @if (stats) { {{ fmt(stats.remaining) }} } @else { — }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-3 mx-4 mb-6 fade-up">
+        <button (click)="openEdit()"
+                class="flex-1 btn-primary flex items-center justify-center gap-2">
+          ✏️ Edit Budget
+        </button>
+        <button (click)="deleteBudget()"
+                class="flex-1 btn-danger flex items-center justify-center gap-2">
+          🗑 Delete
+        </button>
+      </div>
+    }
+
+    <!-- ── NO BUDGET STATE ── -->
+    @if (!budget && !showForm()) {
+      <div class="text-center px-8 py-10 fade-up">
+        <div class="text-5xl mb-4">💰</div>
+        <h3 class="text-lg font-bold mb-2">No budget set</h3>
+        <p class="text-sm text-muted mb-8 leading-relaxed">
+          Set a budget to track your spending and get daily safe-to-spend recommendations.
+        </p>
+        <button (click)="openCreate()" class="btn-primary px-8">
+          + Create Budget
+        </button>
+      </div>
+    }
+
+    <!-- ── BUDGET FORM ── -->
+    @if (showForm()) {
+      <div class="mx-4 card p-6 fade-up">
+        <h2 class="text-lg font-bold mb-5">
+          {{ isEditing() ? 'Edit Budget' : 'Create Budget' }}
+        </h2>
+
+        <!-- Amount input -->
+        <div class="mb-5">
+          <label class="block text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
+            Budget Amount (₹)
+          </label>
+          <input type="number"
+                 [(ngModel)]="inputAmount"
+                 placeholder="e.g. 66000"
+                 min="1"
+                 class="form-input">
+          @if (inputAmount > 0 && inputDays > 0) {
+            <p class="text-xs text-muted mt-2">
+              ₹{{ inputAmount | number:'1.0-0' }} over {{ inputDays }} days
+            </p>
+          }
+        </div>
+
+        <!-- Days input -->
+        <div class="mb-5">
+          <label class="block text-[10px] font-semibold text-muted uppercase tracking-widest mb-2">
+            Number of Days
+          </label>
+          <input type="number"
+                 [(ngModel)]="inputDays"
+                 placeholder="e.g. 31"
+                 min="1"
+                 max="366"
+                 class="form-input">
+          <p class="text-xs text-muted mt-2">How many days should this budget cover?</p>
+        </div>
+
+        <!-- Daily preview -->
+        @if (formValid) {
+          <div class="mb-5 rounded-2xl p-4 border"
+               style="background:rgba(94,123,255,0.07); border-color:rgba(94,123,255,0.2)">
+            <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1.5">
+              Daily allowance
+            </p>
+            <p class="text-xl font-bold font-mono text-accent">{{ fmt(dailyPreview) }}/day</p>
+          </div>
+        }
+
+        <!-- Submit -->
+        <button (click)="saveBudget()"
+                [disabled]="!formValid || saving()"
+                class="w-full py-4 rounded-2xl font-bold text-base text-white
+                       transition-all duration-200 mb-3
+                       disabled:opacity-40 disabled:cursor-not-allowed"
+                style="background: linear-gradient(135deg, #5e7bff, #7c5cfc);
+                       box-shadow: 0 4px 20px rgba(94,123,255,0.3);">
+          @if (saving()) { Saving… } @else { Save Budget }
+        </button>
+
+        <!-- Cancel -->
+        @if (isEditing()) {
+          <button (click)="cancelForm()" class="w-full btn-ghost">
+            Cancel
+          </button>
+        }
+      </div>
+    }
+
+  } <!-- /!loading -->
+</div>

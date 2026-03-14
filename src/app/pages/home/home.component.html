@@ -1,0 +1,115 @@
+<div class="page-container">
+
+  <!-- ── Loading skeleton ── -->
+  @if (loading()) {
+    <div class="px-6 pt-14 pb-4">
+      <div class="skeleton h-6 w-48 mb-2 rounded-2xl"></div>
+    </div>
+    <div class="flex flex-col items-center px-6 mb-6">
+      <div class="skeleton w-[220px] h-[220px] rounded-full"></div>
+    </div>
+    <div class="mx-4 card p-5 space-y-3">
+      @for (_ of [1,2,3,4]; track $index) {
+        <div class="skeleton h-14 rounded-2xl"></div>
+      }
+    </div>
+  }
+
+  <!-- ── Content ── -->
+  @if (!loading()) {
+
+    <!-- Header -->
+    <header class="flex items-center justify-between px-6 pt-14 pb-5 fade-up">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center
+                    bg-gradient-to-br from-credit to-accent font-bold text-base text-white">
+          SK
+        </div>
+        <div>
+          <p class="text-sm text-muted leading-none mb-0.5">Welcome back</p>
+          <p class="font-bold text-white leading-none">SaravanaKumar</p>
+        </div>
+      </div>
+      <button (click)="goSearch()"
+              class="w-11 h-11 rounded-2xl bg-surface flex items-center justify-center
+                     text-lg border border-white/5 transition-colors hover:bg-surface2">
+        🔍
+      </button>
+    </header>
+
+    <!-- Chart section -->
+    <section class="flex flex-col items-center px-6 pb-6 fade-up">
+      <p class="text-sm text-muted mb-5">
+        Spent in <span class="text-white font-semibold">{{ currentMonthLabel }}</span>
+      </p>
+
+      <app-circular-progress
+        [amount]="totalDebit"
+        [budget]="budget?.amount ?? 0"
+        [size]="220"
+        [strokeWidth]="14">
+      </app-circular-progress>
+    </section>
+
+    <!-- Stats row -->
+    <section class="flex items-center mx-6 mb-6 bg-surface rounded-3xl border border-white/5 fade-up">
+      <div class="flex-1 text-center py-4 px-3">
+        <p class="text-[11px] text-muted uppercase tracking-wider font-semibold mb-1">Budget</p>
+        <p class="text-lg font-bold">
+          @if (budget) { {{ fmt(budget.amount) }} }
+          @else { <span class="text-muted text-sm">Not set</span> }
+        </p>
+      </div>
+      <div class="w-px h-10 bg-white/5"></div>
+      <div class="flex-1 text-center py-4 px-3">
+        <p class="text-[11px] text-muted uppercase tracking-wider font-semibold mb-1">Safe/day</p>
+        <p class="text-lg font-bold text-credit">
+          @if (stats) { {{ fmt(stats.safePerDay) }} }
+          @else { <span class="text-muted text-sm">—</span> }
+        </p>
+      </div>
+      <div class="w-px h-10 bg-white/5"></div>
+      <div class="flex-1 text-center py-4 px-3">
+        <p class="text-[11px] text-muted uppercase tracking-wider font-semibold mb-1">Days left</p>
+        <p class="text-lg font-bold">
+          @if (stats) { {{ stats.daysLeft }} }
+          @else { <span class="text-muted text-sm">—</span> }
+        </p>
+      </div>
+    </section>
+
+    <!-- Month filter chips -->
+    <div class="flex gap-2.5 px-6 mb-5 overflow-x-auto scrollbar-none fade-up">
+      <button class="chip" [class.active]="selectedMonth() === ''"
+              (click)="selectMonth('')">All</button>
+      @for (chip of monthChips; track chip.key) {
+        <button class="chip" [class.active]="selectedMonth() === chip.key"
+                (click)="selectMonth(chip.key)">
+          {{ chip.label }}
+        </button>
+      }
+    </div>
+
+    <!-- Recent Transactions card -->
+    <div class="mx-4 card pb-2 fade-up" style="margin-bottom:10%">
+      <div class="flex items-center justify-between px-5 pt-5 pb-4">
+        <h2 class="text-base font-bold">Recent transactions</h2>
+        <button (click)="goSearch()"
+                class="text-xs text-accent font-semibold bg-accent/10
+                       px-3 py-1.5 rounded-full transition-colors hover:bg-accent/20">
+          See all →
+        </button>
+      </div>
+
+      <div class="px-2">
+        @if (recentTx.length === 0) {
+          <div class="text-center py-10 text-muted text-sm">No transactions</div>
+        }
+        @for (tx of recentTx; track tx.id + tx.date) {
+          <app-transaction-item [tx]="tx" />
+        }
+      </div>
+    </div>
+
+  } <!-- /!loading -->
+</div>

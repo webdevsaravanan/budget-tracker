@@ -1,0 +1,161 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <header class="px-6 pt-14 pb-4 fade-up">
+    <h1 class="text-3xl font-bold mb-4">Search</h1>
+
+    <!-- Search bar -->
+    <div class="flex items-center gap-3 bg-surface rounded-2xl px-4 py-3
+                border border-white/5 focus-within:border-accent/50 transition-colors">
+      <span class="text-lg text-muted">🔍</span>
+      <input type="text"
+             [(ngModel)]="filter.query"
+             (ngModelChange)="applyFilters()"
+             placeholder="Search by name, UPI ID, account…"
+             class="flex-1 bg-transparent border-none outline-none text-white
+                    text-sm placeholder:text-white/20 font-sans">
+      @if (filter.query) {
+        <button (click)="filter.query = ''; applyFilters()"
+                class="text-muted hover:text-white transition-colors text-lg leading-none">×</button>
+      }
+    </div>
+  </header>
+
+  <!-- ── FILTERS ── -->
+  <div class="px-6 space-y-5 pb-4 fade-up">
+
+    <!-- Date / Month -->
+    <div>
+      <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">Date & Month</p>
+      <div class="flex gap-3">
+        <!-- Specific date -->
+        <div class="flex-1">
+          <p class="text-[10px] text-muted mb-1.5">Specific date</p>
+          <input type="date"
+                 [(ngModel)]="filter.date"
+                 (ngModelChange)="filter.month = ''; applyFilters()"
+                 class="form-input text-sm py-2.5">
+        </div>
+        <!-- Month -->
+        <div class="flex-1">
+          <p class="text-[10px] text-muted mb-1.5">Month</p>
+          <div class="relative">
+            <select [(ngModel)]="filter.month"
+                    (ngModelChange)="filter.date = ''; applyFilters()"
+                    class="form-input text-sm py-2.5 cursor-pointer pr-8">
+              <option value="">All months</option>
+              @for (m of months; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none text-xs">▾</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="h-px bg-white/5"></div>
+
+    <!-- Type filter -->
+    <div>
+      <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">Type</p>
+      <div class="flex gap-2">
+        <button class="chip" [class.active]="filter.type === 'all'"
+                (click)="setType('all')">All</button>
+        <button class="chip" (click)="setType('debit')"
+                [class]="filter.type === 'debit'
+                  ? 'chip flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border bg-debit border-debit text-white cursor-pointer'
+                  : 'chip'">
+          ↗ Debit
+        </button>
+        <button class="chip" (click)="setType('credit')"
+                [class]="filter.type === 'credit'
+                  ? 'chip flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold border bg-credit border-credit text-white cursor-pointer'
+                  : 'chip'">
+          ↙ Credit
+        </button>
+      </div>
+    </div>
+
+    <div class="h-px bg-white/5"></div>
+
+    <!-- Account filter -->
+    <div>
+      <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3">Account</p>
+      <div class="flex flex-wrap gap-2">
+        @for (acc of accounts(); track acc) {
+          <button (click)="toggleAccount(acc)"
+                  class="px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold
+                         border transition-all duration-200 cursor-pointer"
+                  [class]="filter.accounts.has(acc)
+                    ? 'bg-accent2 border-accent2 text-white'
+                    : 'bg-transparent border-white/10 text-muted hover:border-white/25 hover:text-white'">
+            {{ acc }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Clear filters -->
+    @if (hasActiveFilters) {
+      <button (click)="clearFilters()"
+              class="text-xs text-debit font-semibold border border-debit/20
+                     bg-debit/5 rounded-full px-4 py-1.5 transition-colors hover:bg-debit/10">
+        ✕ Clear all filters
+      </button>
+    }
+  </div>
+
+  <div class="h-px bg-white/5 mx-6 mb-4"></div>
+<!-- ── STICKY SUMMARY ── -->
+  <div class="left-1/2 -translate-x-1/2
+              w-[calc(100%-32px)] max-w-[398px]
+              bg-surface2/95 backdrop-blur-xl
+              rounded-3xl flex justify-around items-center
+              px-5 shadow-2xl z-40" style="margin-left:49%;margin-bottom:3%">
+    <div class="text-center">
+      <p class="text-[9px] font-semibold text-muted uppercase tracking-widest mb-1">Debits</p>
+      <p class="text-base font-bold font-mono text-debit">{{ fmt(totalDebit) }}</p>
+    </div>
+    <div class="w-px h-8 bg-white/8"></div>
+    <div class="text-center">
+      <p class="text-[9px] font-semibold text-muted uppercase tracking-widest mb-1">Credits</p>
+      <p class="text-base font-bold font-mono text-credit">{{ fmt(totalCredit) }}</p>
+    </div>
+    <div class="w-px h-8 bg-white/8"></div>
+    <div class="text-center">
+      <p class="text-[9px] font-semibold text-muted uppercase tracking-widest mb-1">Net</p>
+      <p class="text-base font-bold font-mono"
+         [class.text-credit]="totalCredit >= totalDebit"
+         [class.text-debit]="totalCredit < totalDebit">
+        {{ fmt(totalCredit - totalDebit) }}
+      </p>
+    </div>
+  </div>
+  <!-- ── RESULTS ── -->
+  <div class="px-4 fade-up" style="margin-bottom: 10%;">
+    <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3 px-2">
+      {{ results().length }} transaction{{ results().length !== 1 ? 's' : '' }}
+    </p>
+
+    @if (loading()) {
+      @for (_ of [1,2,3]; track $index) {
+        <div class="skeleton h-16 rounded-2xl mb-2"></div>
+      }
+    }
+
+    @if (!loading() && results().length === 0) {
+      <div class="text-center py-16 text-muted">
+        <div class="text-4xl mb-3">🔍</div>
+        <p class="text-sm font-medium">No transactions found</p>
+        <p class="text-xs mt-1">Try adjusting your filters</p>
+      </div>
+    }
+
+    @if (!loading()) {
+      @for (tx of results(); track tx.id + tx.date) {
+        <app-transaction-item [tx]="tx" />
+      }
+    }
+  </div>
+</div>

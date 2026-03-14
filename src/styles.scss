@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg:       #0f0f0f;
+    --surface:  #1c1c1e;
+    --surface2: #2c2c2e;
+    --surface3: #3a3a3c;
+    --accent:   #5e7bff;
+    --accent2:  #7c5cfc;
+    --debit:    #ff5f5f;
+    --credit:   #32d583;
+    --muted:    #8e8e93;
+    --border:   rgba(255,255,255,0.07);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background: var(--bg);
+    color: #ffffff;
+    font-family: 'Space Grotesk', sans-serif;
+    overscroll-behavior: none;
+  }
+
+  ::-webkit-scrollbar { width: 0; height: 0; }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.6);
+    cursor: pointer;
+  }
+
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply max-w-[430px] mx-auto min-h-screen pb-24 relative;
+  }
+
+  .card {
+    @apply rounded-3xl bg-surface border border-white/5;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-white font-semibold rounded-2xl px-5 py-3.5
+           transition-all duration-200 hover:opacity-90 active:scale-95
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply bg-debit/10 text-debit border border-debit/20 font-semibold
+           rounded-2xl px-5 py-3.5 transition-all duration-200
+           hover:bg-debit/20 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply bg-surface2 text-white font-semibold rounded-2xl px-5 py-3.5
+           transition-all duration-200 hover:bg-surface3 active:scale-95;
+  }
+
+  .form-input {
+    @apply w-full bg-surface2 border border-white/5 rounded-2xl px-4 py-3.5
+           text-white font-mono text-base outline-none
+           focus:border-accent transition-colors duration-200
+           placeholder:text-white/20;
+  }
+
+  .chip {
+    @apply flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold
+           border border-white/10 bg-transparent text-muted
+           cursor-pointer transition-all duration-200
+           hover:border-white/20 hover:text-white;
+
+    &.active {
+      @apply bg-accent border-accent text-white;
+    }
+  }
+
+  .tx-item {
+    @apply flex items-center gap-3.5 px-3 py-3 rounded-2xl
+           transition-colors duration-150 cursor-pointer
+           border-b border-white/5 last:border-0
+           hover:bg-surface2 active:bg-surface3;
+  }
+
+  .tx-icon {
+    @apply w-11 h-11 rounded-2xl flex-shrink-0 flex items-center
+           justify-center text-lg;
+
+    &.debit  { @apply bg-debit/10 text-debit; }
+    &.credit { @apply bg-credit/10 text-credit; }
+    &.transfer { @apply bg-accent/10 text-accent; }
+  }
+
+  .stat-box {
+    @apply bg-white/5 rounded-2xl p-3.5;
+
+    .label {
+      @apply text-[10px] text-white/40 font-semibold tracking-widest uppercase mb-1.5;
+    }
+    .value {
+      @apply text-lg font-bold font-mono;
+    }
+  }
+
+  .skeleton {
+    @apply rounded-xl bg-surface2 animate-pulse;
+  }
+}
+
+@layer utilities {
+  .text-debit  { color: var(--debit); }
+  .text-credit { color: var(--credit); }
+  .bg-debit    { background-color: var(--debit); }
+  .bg-credit   { background-color: var(--credit); }
+
+  .safe-to-spend { color: var(--credit); }
+
+  .fade-up {
+    animation: fadeUp 0.35s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+
+  @keyframes shimmer {
+    to { background-position: -200% 0; }
+  }
+}
