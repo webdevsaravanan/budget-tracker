@@ -60,16 +60,10 @@ export class BudgetComponent implements OnInit {
   }
 
   ngOnInit() {
-    const loaded = this.txService.snapshot.length > 0;
-
-    if (loaded) {
-      this.budgetService.load().subscribe(() => this.loading.set(false));
-    } else {
       Promise.all([
         this.budgetService.load().toPromise(),
         this.txService.load().toPromise(),
       ]).then(() => this.loading.set(false));
-    }
   }
 
   openCreate() {

@@ -36,11 +36,7 @@ export class SearchComponent implements OnInit {
   ];
 
   ngOnInit() {
-    if (this.txService.snapshot.length > 0) {
-      this.init();
-    } else {
       this.txService.load().subscribe(() => this.init());
-    }
   }
 
   private init() {
