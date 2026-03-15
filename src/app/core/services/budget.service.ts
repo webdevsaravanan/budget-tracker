@@ -73,13 +73,21 @@ export class BudgetService {
   }
 
   getRemainingDays(): number {
-    const b = this.snapshot;
-    if (!b) return 0;
-    const end  = new Date(b.startDate);
-    end.setDate(end.getDate() + b.days);
-    const diff = Math.ceil((end.getTime() - Date.now()) / 86_400_000);
-    return Math.max(0, diff);
-  }
+  const b = this.snapshot;
+  if (!b) return 0;
+
+  // Normalise both dates to midnight so we count calendar days,
+  // not hours — this makes the number decrease by 1 each new day.
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const start = new Date(b.startDate);
+  const endMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate() + b.days);
+
+  const diffMs   = endMidnight.getTime() - todayMidnight.getTime();
+  const diffDays = Math.round(diffMs / 86_400_000);
+  return Math.max(0, diffDays);
+}
 
   getDailyAllowance(amount: number, days: number): number {
     return days > 0 ? amount / days : 0;
