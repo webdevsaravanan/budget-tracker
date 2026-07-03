@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TransactionService } from '../../core/services/transaction.service';
 import { TransactionItemComponent } from '../../shared/components/transaction-item/transaction-item.component';
+import { EditDisplayNameComponent } from '../../shared/components/edit-display-name/edit-display-name.component';
 import { Transaction, TransactionFilter } from '../../core/models/transaction.model';
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, FormsModule, TransactionItemComponent],
+  imports: [CommonModule, FormsModule, TransactionItemComponent, EditDisplayNameComponent],
   templateUrl: './search.component.html',
 })
 export class SearchComponent implements OnInit {
@@ -16,12 +17,27 @@ export class SearchComponent implements OnInit {
 
   loading  = signal(true);
   results  = signal<Transaction[]>([]);
+  displayedResults = signal<Transaction[]>([]);
+  showFilters = signal(false);
+
+  selectedTx = signal<Transaction | null>(null);
+  isEditing  = signal(false);
   accounts = signal<string[]>([]);
+  dateMode: 'today' | 'all' | 'custom' = 'today';
+
+  categories = signal<string[]>([]);
+  pageSize = 15;
+  currentPage = 1;
+
+  toggleFilters() {
+    this.showFilters.update(v => !v);
+  }
 
   filter: TransactionFilter = {
     query:    '',
     date:     '',
     month:    '',
+    category: '',
     type:     'all',
     accounts: new Set(),
   };
@@ -35,18 +51,73 @@ export class SearchComponent implements OnInit {
     { value: '11', label: 'November' },  { value: '12', label: 'December' },
   ];
 
+  getTodayString(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   ngOnInit() {
       this.txService.load().subscribe(() => this.init());
   }
 
   private init() {
     this.accounts.set(this.txService.getAccounts());
+    this.categories.set(this.txService.getCategories());
+    this.filter.date = this.getTodayString();
     this.applyFilters();
     this.loading.set(false);
   }
 
   applyFilters() {
     this.results.set(this.txService.applyFilters(this.filter));
+    this.currentPage = 1;
+    this.updateDisplayedResults();
+  }
+
+  updateDisplayedResults() {
+    const limit = this.currentPage * this.pageSize;
+    this.displayedResults.set(this.results().slice(0, limit));
+  }
+
+  loadNextPage() {
+    if (this.displayedResults().length >= this.results().length) {
+      return;
+    }
+    this.currentPage++;
+    this.updateDisplayedResults();
+  }
+
+  onResultsScroll(event: Event) {
+    const element = event.target as HTMLElement;
+    const threshold = 150;
+    const position = element.scrollTop + element.clientHeight;
+    const height = element.scrollHeight;
+    
+    if (position >= height - threshold) {
+      this.loadNextPage();
+    }
+  }
+
+  onDateModeChange(mode: 'today' | 'all' | 'custom') {
+    this.dateMode = mode;
+    this.filter.month = ''; // Clear month as they are mutually exclusive
+
+    if (mode === 'today') {
+      this.filter.date = this.getTodayString();
+    } else if (mode === 'all') {
+      this.filter.date = '';
+    } else if (mode === 'custom') {
+      this.filter.date = this.getTodayString(); // Default to today in picker
+    }
+    this.applyFilters();
+  }
+
+  onMonthChange() {
+    if (this.filter.month) {
+      this.dateMode = 'all';
+      this.filter.date = '';
+    }
+    this.applyFilters();
   }
 
   setType(type: TransactionFilter['type']) {
@@ -61,7 +132,15 @@ export class SearchComponent implements OnInit {
   }
 
   clearFilters() {
-    this.filter = { query: '', date: '', month: '', type: 'all', accounts: new Set() };
+    this.dateMode = 'today';
+    this.filter = { 
+      query: '', 
+      date: this.getTodayString(), 
+      month: '', 
+      category: '',
+      type: 'all', 
+      accounts: new Set() 
+    };
     this.applyFilters();
   }
 
@@ -74,8 +153,18 @@ export class SearchComponent implements OnInit {
   }
 
   get hasActiveFilters(): boolean {
-    return !!(this.filter.query || this.filter.date || this.filter.month ||
-              this.filter.type !== 'all' || this.filter.accounts.size > 0);
+    return !!(this.filter.query || this.dateMode !== 'today' || this.filter.month ||
+              this.filter.category || this.filter.type !== 'all' || this.filter.accounts.size > 0);
+  }
+
+  openEdit(tx: Transaction) {
+    this.selectedTx.set(tx);
+    this.isEditing.set(true);
+  }
+
+  closeEdit() {
+    this.isEditing.set(false);
+    this.selectedTx.set(null);
   }
 
   fmt(n: number): string {

@@ -29,10 +29,20 @@ export class BudgetComponent implements OnInit {
   inputAmount = 0;
   inputDays   = 0;
 
+  selectedCategory = signal<string>('');
+
   get budget(): Budget | null { return this.budgetService.snapshot; }
 
+  get categories(): string[] {
+    return this.txService.getCategories();
+  }
+
   get stats(): BudgetStats | null {
-    const totalDebit = this.txService.getTotalDebit();
+    const category = this.selectedCategory();
+    const txs = category
+      ? this.txService.snapshot.filter(t => t.category === category)
+      : this.txService.snapshot;
+    const totalDebit = this.txService.getTotalDebit(txs);
     return this.budgetService.computeStats(totalDebit);
   }
 
@@ -107,6 +117,14 @@ export class BudgetComponent implements OnInit {
     this.budgetService.delete().subscribe({
       next: () => this.toastService.show('Budget deleted', 'error'),
       error: () => this.toastService.show('Failed to delete', 'error'),
+    });
+  }
+
+  clearTransactions() {
+    if (!confirm('Are you sure you want to clear all transactions? This cannot be undone.')) return;
+    this.txService.clearAllTransactions().subscribe({
+      next: () => this.toastService.show('All transactions cleared! 🧹', 'success'),
+      error: () => this.toastService.show('Failed to clear transactions', 'error'),
     });
   }
 

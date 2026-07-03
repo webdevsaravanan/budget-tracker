@@ -10,9 +10,11 @@ export class TransactionService {
 
   private _transactions$ = new BehaviorSubject<Transaction[]>([]);
   private _loading$      = new BehaviorSubject<boolean>(false);
+  private _saving$       = new BehaviorSubject<boolean>(false);
 
   readonly transactions$ = this._transactions$.asObservable();
   readonly loading$      = this._loading$.asObservable();
+  readonly saving$       = this._saving$.asObservable();
 
   // ── Fetch ────────────────────────────────────────────
   load(): Observable<Transaction[]> {
@@ -71,6 +73,8 @@ export class TransactionService {
     if (f.query) {
       const q = f.query.toLowerCase();
       list = list.filter(t =>
+        this.getDisplayName(t).toLowerCase().includes(q) ||
+        (t.category && t.category.toLowerCase().includes(q)) ||
         t.id.toLowerCase().includes(q) ||
         t.account.toLowerCase().includes(q)
       );
@@ -97,6 +101,10 @@ export class TransactionService {
 
     if (f.accounts.size > 0) {
       list = list.filter(t => f.accounts.has(t.account));
+    }
+
+    if (f.category) {
+      list = list.filter(t => t.category === f.category);
     }
 
     return list.sort((a, b) => this.parseDate(b.date).getTime() - this.parseDate(a.date).getTime());
@@ -148,8 +156,72 @@ export class TransactionService {
   }
 
   getDisplayName(tx: Transaction): string {
+    if (tx.displayName) {
+      return tx.displayName;
+    }
     const parts = tx.id.split('/');
     const last  = parts[parts.length - 1];
     return last.length > 2 ? last.replace(/_/g, ' ') : tx.id;
+  }
+
+  saveTransactionDetails(txId: string, displayName: string, category: string): Observable<Transaction[]> {
+    this._saving$.next(true);
+    const updated = this.snapshot.map(t => {
+      if (t.id === txId) {
+        return { 
+          ...t, 
+          displayName: displayName.trim(), 
+          category: category.trim() || undefined 
+        };
+      }
+      return t;
+    });
+
+    return this.http.post<Transaction[]>(this.API, updated).pipe(
+      tap(() => {
+        this._transactions$.next(updated);
+        this._saving$.next(false);
+      })
+    );
+  }
+
+  deleteTransaction(txId: string): Observable<Transaction[]> {
+    this._saving$.next(true);
+    const updated = this.snapshot.filter(t => t.id !== txId);
+
+    return this.http.post<Transaction[]>(this.API, updated).pipe(
+      tap(() => {
+        this._transactions$.next(updated);
+        this._saving$.next(false);
+      })
+    );
+  }
+
+  clearAllTransactions(): Observable<Transaction[]> {
+    this._saving$.next(true);
+    const updated: Transaction[] = [];
+
+    return this.http.post<Transaction[]>(this.API, updated).pipe(
+      tap(() => {
+        this._transactions$.next(updated);
+        this._saving$.next(false);
+      })
+    );
+  }
+
+  addTransaction(tx: Transaction): Observable<Transaction[]> {
+    this._saving$.next(true);
+    const updated = [tx, ...this.snapshot];
+
+    return this.http.post<Transaction[]>(this.API, updated).pipe(
+      tap(() => {
+        this._transactions$.next(updated);
+        this._saving$.next(false);
+      })
+    );
+  }
+
+  getCategories(): string[] {
+    return [...new Set(this.snapshot.map(t => t.category).filter(Boolean))] as string[];
   }
 }

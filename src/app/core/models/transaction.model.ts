@@ -6,6 +6,8 @@ export interface Transaction {
   account: string;
   created: string;
   transactionType: 'debit' | 'credit';
+  displayName?: string;
+  category?: string;
 }
 
 export interface TransactionFilter {
@@ -14,4 +16,5 @@ export interface TransactionFilter {
   month:   string;   // "03"
   type:    'all' | 'debit' | 'credit';
   accounts: Set<string>;
+  category?: string;
 }

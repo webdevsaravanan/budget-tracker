@@ -1,4 +1,4 @@
-<div class="page-container">
+<div class="page-container flex flex-col h-screen overflow-hidden !pb-0 !min-h-0">
 
   <!-- ── Loading skeleton ── -->
   @if (loading()) {
@@ -18,81 +18,94 @@
   <!-- ── Content ── -->
   @if (!loading()) {
 
-    <!-- Header -->
-    <header class="flex items-center justify-between px-6 pt-14 pb-5 fade-up">
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-2xl flex items-center justify-center
-                    bg-gradient-to-br from-credit to-accent font-bold text-base text-white">
-          SK
+    <!-- Top Fixed Area -->
+    <div class="flex-shrink-0 flex flex-col">
+      <!-- Header -->
+      <header class="flex items-center justify-between px-6 pt-14 pb-5 fade-up">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl flex items-center justify-center
+                      bg-gradient-to-br from-credit to-accent font-bold text-base text-white">
+            SK
+          </div>
+          <div>
+            <p class="text-sm text-muted leading-none mb-0.5">Welcome back</p>
+            <p class="font-bold text-white leading-none">SaravanaKumar</p>
+          </div>
         </div>
-        <div>
-          <p class="text-sm text-muted leading-none mb-0.5">Welcome back</p>
-          <p class="font-bold text-white leading-none">SaravanaKumar</p>
-        </div>
-      </div>
-      <button (click)="goSearch()"
-              class="w-11 h-11 rounded-2xl bg-surface flex items-center justify-center
-                     text-lg border border-white/5 transition-colors hover:bg-surface2">
-        🔍
-      </button>
-    </header>
-
-    <!-- Chart section -->
-    <section class="flex flex-col items-center px-6 pb-6 fade-up">
-      <p class="text-sm text-muted mb-5">
-        Spent in <span class="text-white font-semibold">{{ currentMonthLabel }}</span>
-      </p>
-
-      <app-circular-progress
-        [amount]="totalDebit"
-        [budget]="budget?.amount ?? 0"
-        [size]="220"
-        [strokeWidth]="14">
-      </app-circular-progress>
-    </section>
-
-    <!-- Stats row -->
-    <section class="flex items-center mx-6 mb-6 bg-surface rounded-3xl border border-white/5 fade-up">
-      <div class="flex-1 text-center py-4 px-3">
-        <p class="text-[11px] text-muted uppercase tracking-wider font-semibold mb-1">Budget</p>
-        <p class="text-lg font-bold">
-          @if (budget) { {{ fmt(budget.amount) }} }
-          @else { <span class="text-muted text-sm">Not set</span> }
-        </p>
-      </div>
-      <div class="w-px h-10 bg-white/5"></div>
-      <div class="flex-1 text-center py-4 px-3">
-        <p class="text-[11px] text-muted uppercase tracking-wider font-semibold mb-1">Safe/day</p>
-        <p class="text-lg font-bold text-credit">
-          @if (stats) { {{ fmt(stats.safePerDay) }} }
-          @else { <span class="text-muted text-sm">—</span> }
-        </p>
-      </div>
-      <div class="w-px h-10 bg-white/5"></div>
-      <div class="flex-1 text-center py-4 px-3">
-        <p class="text-[11px] text-muted uppercase tracking-wider font-semibold mb-1">Days left</p>
-        <p class="text-lg font-bold">
-          @if (stats) { {{ stats.daysLeft }} }
-          @else { <span class="text-muted text-sm">—</span> }
-        </p>
-      </div>
-    </section>
-
-    <!-- Month filter chips -->
-    <div class="flex gap-2.5 px-6 mb-5 overflow-x-auto scrollbar-none fade-up">
-      <button class="chip" [class.active]="selectedMonth() === ''"
-              (click)="selectMonth('')">All</button>
-      @for (chip of monthChips; track chip.key) {
-        <button class="chip" [class.active]="selectedMonth() === chip.key"
-                (click)="selectMonth(chip.key)">
-          {{ chip.label }}
+        <button (click)="goSearch()"
+                class="w-11 h-11 rounded-2xl bg-surface flex items-center justify-center
+                       text-lg border border-white/5 transition-colors hover:bg-surface2">
+          🔍
         </button>
-      }
+      </header>
+
+      <!-- Chart section -->
+      <section class="flex flex-col items-center px-6 pb-6 fade-up">
+        <p class="text-sm text-muted mb-5">
+          Spent in <span class="text-white font-semibold">{{ currentMonthLabel }}</span>
+        </p>
+
+        <app-circular-progress
+          [amount]="totalDebit"
+          [budget]="budget?.amount ?? 0"
+          [size]="220"
+          [strokeWidth]="14">
+        </app-circular-progress>
+      </section>
+
+      <!-- Stats row -->
+      <section class="flex items-center mx-6 mb-6 bg-surface rounded-3xl border border-white/5 fade-up">
+        <div class="flex-1 text-center py-4 px-2">
+          <p class="text-[10px] text-muted uppercase tracking-wider font-semibold mb-1">Budget</p>
+          <p class="text-base font-bold">
+            @if (budget) { {{ fmt(budget.amount) }} }
+            @else { <span class="text-muted text-xs">Not set</span> }
+          </p>
+        </div>
+        <div class="w-px h-10 bg-white/5"></div>
+        <div class="flex-1 text-center py-4 px-2">
+          <p class="text-[10px] text-muted uppercase tracking-wider font-semibold mb-1">Safe/day</p>
+          <p class="text-base font-bold text-credit">
+            @if (stats) { {{ fmt(stats.safePerDay) }} }
+            @else { <span class="text-muted text-xs">—</span> }
+          </p>
+        </div>
+        <div class="w-px h-10 bg-white/5"></div>
+        <div class="flex-1 text-center py-4 px-2">
+          <p class="text-[10px] text-muted uppercase tracking-wider font-semibold mb-1">Days left</p>
+          <p class="text-base font-bold">
+            @if (stats) { {{ stats.daysLeft }} }
+            @else { <span class="text-muted text-xs">—</span> }
+          </p>
+        </div>
+        <div class="w-px h-10 bg-white/5"></div>
+        <div class="flex-1 text-center py-4 px-2">
+          <p class="text-[10px] text-muted uppercase tracking-wider font-semibold mb-1">Remaining</p>
+          <p class="text-base font-bold"
+             [class.text-credit]="stats && !stats.isOver"
+             [class.text-debit]="stats && stats.isOver">
+            @if (stats) { {{ fmt(stats.remaining) }} }
+            @else { <span class="text-muted text-xs">—</span> }
+          </p>
+        </div>
+      </section>
+
+      <!-- Month filter chips -->
+      <div class="flex gap-2.5 px-6 mb-5 overflow-x-auto scrollbar-none fade-up">
+        <button class="chip" [class.active]="selectedMonth() === ''"
+                (click)="selectMonth('')">All</button>
+        @for (chip of monthChips; track chip.key) {
+          <button class="chip" [class.active]="selectedMonth() === chip.key"
+                  (click)="selectMonth(chip.key)">
+            {{ chip.label }}
+          </button>
+        }
+      </div>
     </div>
 
-    <!-- Recent Transactions card -->
-    <div class="mx-4 card pb-2 fade-up" style="margin-bottom:10%">
-      <div class="flex items-center justify-between px-5 pt-5 pb-4">
+    <!-- Recent Transactions card (Scrollable scroll-container) -->
+    <div class="mx-4 card flex-1 flex flex-col overflow-hidden mb-28">
+      <div class="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4">
         <h2 class="text-base font-bold">Recent transactions</h2>
         <button (click)="goSearch()"
                 class="text-xs text-accent font-semibold bg-accent/10
@@ -101,15 +114,21 @@
         </button>
       </div>
 
-      <div class="px-2">
+      <div class="flex-1 overflow-y-auto px-3 pb-4 fade-up">
         @if (recentTx.length === 0) {
           <div class="text-center py-10 text-muted text-sm">No transactions</div>
         }
         @for (tx of recentTx; track tx.id + tx.date) {
-          <app-transaction-item [tx]="tx" />
+          <app-transaction-item [tx]="tx" (edit)="openEdit($event)" />
         }
       </div>
     </div>
 
   } <!-- /!loading -->
+
+  <app-edit-display-name
+    [transaction]="selectedTx()"
+    [isOpen]="isEditing()"
+    (close)="closeEdit()"
+  />
 </div>

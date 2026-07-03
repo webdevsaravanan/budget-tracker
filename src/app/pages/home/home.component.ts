@@ -7,12 +7,13 @@ import { TransactionService } from '../../core/services/transaction.service';
 import { BudgetService }      from '../../core/services/budget.service';
 import { CircularProgressComponent } from '../../shared/components/circular-progress/circular-progress.component';
 import { TransactionItemComponent }  from '../../shared/components/transaction-item/transaction-item.component';
+import { EditDisplayNameComponent } from '../../shared/components/edit-display-name/edit-display-name.component';
 import { Transaction } from '../../core/models/transaction.model';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, CircularProgressComponent, TransactionItemComponent],
+  imports: [CommonModule, CircularProgressComponent, TransactionItemComponent, EditDisplayNameComponent],
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit {
@@ -23,6 +24,9 @@ export class HomeComponent implements OnInit {
   loading        = signal(true);
   selectedMonth  = signal('');
   availableMonths = signal<string[]>([]);
+
+  selectedTx = signal<Transaction | null>(null);
+  isEditing  = signal(false);
 
   get budget()       { return this.budgetService.snapshot; }
   get transactions() { return this.txService.snapshot; }
@@ -79,6 +83,16 @@ export class HomeComponent implements OnInit {
   }
 
   goSearch() { this.router.navigate(['/search']); }
+
+  openEdit(tx: Transaction) {
+    this.selectedTx.set(tx);
+    this.isEditing.set(true);
+  }
+
+  closeEdit() {
+    this.isEditing.set(false);
+    this.selectedTx.set(null);
+  }
 
   fmt(n: number): string {
     return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });

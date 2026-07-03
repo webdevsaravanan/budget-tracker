@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Transaction } from '../../../core/models/transaction.model';
 import { TransactionService } from '../../../core/services/transaction.service';
@@ -8,7 +8,7 @@ import { TransactionService } from '../../../core/services/transaction.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="tx-item">
+    <div class="tx-item" (click)="edit.emit(tx)">
       <!-- Icon -->
       <div class="tx-icon" [ngClass]="meta.cls">
         {{ meta.icon }}
@@ -16,7 +16,14 @@ import { TransactionService } from '../../../core/services/transaction.service';
 
       <!-- Info -->
       <div class="flex-1 min-w-0">
-        <div class="text-sm font-semibold text-white truncate">{{ displayName }}</div>
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span class="text-sm font-semibold text-white truncate">{{ displayName }}</span>
+          @if (tx.category) {
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent border border-accent/20 tracking-wider uppercase flex-shrink-0">
+              {{ tx.category }}
+            </span>
+          }
+        </div>
         <div class="text-[11px] text-muted font-mono mt-0.5">{{ tx.account }}</div>
       </div>
 
@@ -34,6 +41,7 @@ import { TransactionService } from '../../../core/services/transaction.service';
 })
 export class TransactionItemComponent {
   @Input({ required: true }) tx!: Transaction;
+  @Output() edit = new EventEmitter<Transaction>();
 
   private txService = inject(TransactionService);
 

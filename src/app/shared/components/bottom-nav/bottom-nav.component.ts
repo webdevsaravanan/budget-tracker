@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 interface NavItem {
-  path:  string;
-  icon:  string;
+  path: string;
+  icon: string;
   label: string;
 }
 
@@ -14,7 +14,7 @@ interface NavItem {
   template: `
     <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px]
                 bg-surface/95 backdrop-blur-xl border-t border-white/5
-                flex items-center px-4 pt-3 pb-8 z-50">
+                flex items-center px-4 pt-3 z-50">
       @for (item of navItems; track item.path) {
         <a [routerLink]="item.path"
            routerLinkActive="active-nav"
@@ -43,8 +43,9 @@ interface NavItem {
 })
 export class BottomNavComponent {
   navItems: NavItem[] = [
-    { path: '',       icon: '🏠', label: 'Home'   },
+    { path: '', icon: '🏠', label: 'Home' },
     { path: 'search', icon: '🔍', label: 'Search' },
+    { path: 'add-transaction', icon: '➕', label: 'Add' },
     { path: 'budget', icon: '💰', label: 'Budget' },
   ];
 }

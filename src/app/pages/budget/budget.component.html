@@ -47,6 +47,21 @@
           }
         </div>
 
+        <!-- Category Filter -->
+        <div class="mb-4">
+          <div class="relative">
+            <select [ngModel]="selectedCategory()"
+                    (ngModelChange)="selectedCategory.set($event)"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white/80 outline-none cursor-pointer pr-8 font-sans">
+              <option value="" style="background-color: var(--surface)">All Categories</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat" style="background-color: var(--surface)">{{ cat }}</option>
+              }
+            </select>
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none text-xs">▾</span>
+          </div>
+        </div>
+
         <!-- Progress bar -->
         @if (stats) {
           <div class="mb-5">
@@ -91,14 +106,20 @@
       </div>
 
       <!-- Action buttons -->
-      <div class="flex gap-3 mx-4 mb-6 fade-up">
-        <button (click)="openEdit()"
-                class="flex-1 btn-primary flex items-center justify-center gap-2">
-          ✏️ Edit Budget
-        </button>
-        <button (click)="deleteBudget()"
-                class="flex-1 btn-danger flex items-center justify-center gap-2">
-          🗑 Delete
+      <div class="flex flex-col gap-3 mx-4 mb-6 fade-up">
+        <div class="flex gap-3">
+          <button (click)="openEdit()"
+                  class="flex-1 btn-primary flex items-center justify-center gap-2">
+            ✏️ Edit Budget
+          </button>
+          <button (click)="deleteBudget()"
+                  class="flex-1 btn-danger flex items-center justify-center gap-2">
+            🗑 Delete
+          </button>
+        </div>
+        <button (click)="clearTransactions()"
+                class="w-full btn-danger flex items-center justify-center gap-2 bg-debit/10 hover:bg-debit/20">
+          ⚠️ Clear All Transactions
         </button>
       </div>
     }
@@ -111,9 +132,15 @@
         <p class="text-sm text-muted mb-8 leading-relaxed">
           Set a budget to track your spending and get daily safe-to-spend recommendations.
         </p>
-        <button (click)="openCreate()" class="btn-primary px-8">
-          + Create Budget
-        </button>
+        <div class="flex flex-col gap-3 max-w-[240px] mx-auto">
+          <button (click)="openCreate()" class="btn-primary w-full">
+            + Create Budget
+          </button>
+          <button (click)="clearTransactions()"
+                  class="w-full btn-danger flex items-center justify-center gap-2 bg-debit/10 hover:bg-debit/20 py-3 text-sm">
+            ⚠️ Clear All Transactions
+          </button>
+        </div>
       </div>
     }
 
