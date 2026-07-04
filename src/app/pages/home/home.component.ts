@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import { forkJoin, of, catchError } from 'rxjs';
 
 import { TransactionService } from '../../core/services/transaction.service';
-import { BudgetService }      from '../../core/services/budget.service';
-import { TrackStockService }  from '../../core/services/track-stock.service';
+import { BudgetService } from '../../core/services/budget.service';
+import { TrackStockService } from '../../core/services/track-stock.service';
 import { CircularProgressComponent } from '../../shared/components/circular-progress/circular-progress.component';
-import { TransactionItemComponent }  from '../../shared/components/transaction-item/transaction-item.component';
+import { TransactionItemComponent } from '../../shared/components/transaction-item/transaction-item.component';
 import { EditDisplayNameComponent } from '../../shared/components/edit-display-name/edit-display-name.component';
 import { Transaction } from '../../core/models/transaction.model';
 
@@ -18,23 +18,23 @@ import { Transaction } from '../../core/models/transaction.model';
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit {
-  private txService     = inject(TransactionService);
+  private txService = inject(TransactionService);
   private budgetService = inject(BudgetService);
   private trackStockService = inject(TrackStockService);
-  private router        = inject(Router);
+  private router = inject(Router);
 
-  loading        = signal(true);
-  selectedMonth  = signal('');
+  loading = signal(true);
+  selectedMonth = signal('');
   availableMonths = signal<string[]>([]);
 
   selectedTx = signal<Transaction | null>(null);
-  isEditing  = signal(false);
+  isEditing = signal(false);
 
   stockSymbol = 'PGINVIT.BSE';
   stockPrice = 94.03;
   activeChartIndex = 0;
 
-  get budget()       { return this.budgetService.snapshot; }
+  get budget() { return this.budgetService.snapshot; }
   get transactions() { return this.txService.snapshot; }
 
   get chartsOrder(): ('budget' | 'stock')[] {
@@ -149,7 +149,7 @@ export class HomeComponent implements OnInit {
     const isAndroid = /android/i.test(navigator.userAgent);
 
     if (isGreen && isAndroid) {
-      window.location.href = 'intent://#Intent;package=com.zerodha.kite3;scheme=kite;end;';
+      window.location.href = 'intent://#Intent;package=com.zerodha.kite3;end';
     } else {
       this.router.navigate(['/investable-transaction']);
     }
