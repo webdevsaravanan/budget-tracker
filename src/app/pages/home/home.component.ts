@@ -149,7 +149,19 @@ export class HomeComponent implements OnInit {
     const isAndroid = /android/i.test(navigator.userAgent);
 
     if (isGreen && isAndroid) {
-      window.location.href = 'intent://#Intent;package=com.zerodha.kite3;end';
+      try {
+        const fallbackUrl = encodeURIComponent('https://play.google.com/store/apps/details?id=com.zerodha.kite3');
+        const intentUrl = `intent://#Intent;package=com.zerodha.kite3;S.browser_fallback_url=${fallbackUrl};end`;
+        
+        window.location.href = intentUrl;
+
+        // Fallback timer: in case the intent does not trigger or WebView blocks custom scheme error
+        setTimeout(() => {
+          window.location.href = 'https://play.google.com/store/apps/details?id=com.zerodha.kite3';
+        }, 1200);
+      } catch (err) {
+        window.location.href = 'https://play.google.com/store/apps/details?id=com.zerodha.kite3';
+      }
     } else {
       this.router.navigate(['/investable-transaction']);
     }
