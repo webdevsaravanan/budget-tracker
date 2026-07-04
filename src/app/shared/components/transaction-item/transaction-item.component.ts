@@ -18,13 +18,16 @@ import { TransactionService } from '../../../core/services/transaction.service';
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-1.5 min-w-0">
           <span class="text-sm font-semibold text-white truncate">{{ displayName }}</span>
+        </div>
+        <div class="text-[11px] text-muted font-mono mt-0.5 flex items-center gap-1.5 flex-wrap">
+          <span>{{ tx.account }}</span>
           @if (tx.category) {
+            <span class="w-1 h-1 rounded-full bg-white/20"></span>
             <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent border border-accent/20 tracking-wider uppercase flex-shrink-0">
               {{ tx.category }}
             </span>
           }
         </div>
-        <div class="text-[11px] text-muted font-mono mt-0.5">{{ tx.account }}</div>
       </div>
 
       <!-- Amount + date -->

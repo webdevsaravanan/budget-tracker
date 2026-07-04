@@ -1,0 +1,157 @@
+<div class="page-container flex flex-col h-screen overflow-hidden !pb-0 !min-h-0">
+
+  <!-- Fixed Top Area -->
+  <div class="flex-shrink-0 bg-bg z-30 flex flex-col">
+    <!-- Header -->
+    <header class="px-6 pt-14 pb-4 fade-up">
+      <h1 class="text-3xl font-bold mb-4">Invest</h1>
+
+      <!-- Filters -->
+      <div class="space-y-4">
+        <!-- Date filter (Only Months) -->
+        <div>
+          <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1.5">Month</p>
+          <div class="flex gap-2.5 items-center">
+            <div class="relative flex-1">
+              <select [(ngModel)]="filterMonth" (ngModelChange)="applyFilters()"
+                class="form-input text-sm py-2.5 cursor-pointer pr-8 font-sans w-full">
+                <option value="">All Months</option>
+                @for (m of months; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+                }
+              </select>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none text-xs">▾</span>
+            </div>
+            @if (hasUninvestedFilteredTransactions()) {
+            <button (click)="markAllFilteredAsInvested()"
+              class="px-4 py-2.5 rounded-2xl bg-credit/10 hover:bg-credit/20 border border-credit/20 text-credit font-semibold text-xs tracking-wider uppercase transition-all flex items-center gap-1.5 whitespace-nowrap">
+              All Invested ✅
+            </button>
+            }
+          </div>
+        </div>
+
+        <!-- Invested Status Filter -->
+        <div>
+          <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-1.5">Invested Status</p>
+          <div class="flex gap-2">
+            <button class="chip" [class.active]="filterInvested === 'all'"
+              (click)="setInvestedFilter('all')">All</button>
+            <button class="chip" [class.active]="filterInvested === 'yes'" (click)="setInvestedFilter('yes')">
+              ✓ Invested
+            </button>
+            <button class="chip" [class.active]="filterInvested === 'no'" (click)="setInvestedFilter('no')">
+              ✗ Not Invested
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── STICKY SUMMARY ── -->
+    <div
+      class="mx-4 my-3 bg-surface2/90 border border-white/5 rounded-3xl flex justify-around items-center py-4 px-5 shadow-lg backdrop-blur-xl fade-up">
+      <div class="text-center">
+        <p class="text-[9px] font-semibold text-muted uppercase tracking-widest mb-1">Investable (10%)</p>
+        <p class="text-base font-bold font-mono text-white">{{ fmt(totalInvestable()) }}</p>
+      </div>
+      <div class="w-px h-8 bg-white/8"></div>
+      <div class="text-center">
+        <p class="text-[9px] font-semibold text-muted uppercase tracking-widest mb-1">Invested</p>
+        <p class="text-base font-bold font-mono text-credit">{{ fmt(totalInvested()) }}</p>
+      </div>
+      <div class="w-px h-8 bg-white/8"></div>
+      <div class="text-center">
+        <p class="text-[9px] font-semibold text-muted uppercase tracking-widest mb-1">Remaining</p>
+        <p class="text-base font-bold font-mono text-accent">{{ fmt(totalInvestable() - totalInvested()) }}</p>
+      </div>
+    </div>
+
+    <div class="h-px bg-white/5 mx-6 mb-4"></div>
+  </div>
+
+  <!-- Scrollable Results Area -->
+  <div class="flex-1 overflow-y-auto px-4 pb-28" (scroll)="onResultsScroll($event)">
+    <div class="fade-up">
+      <p class="text-[10px] font-semibold text-muted uppercase tracking-widest mb-3 px-2">
+        @if (results().length > displayedResults().length) {
+        Showing {{ displayedResults().length }} of {{ results().length }} transactions
+        } @else {
+        {{ results().length }} transaction{{ results().length !== 1 ? 's' : '' }}
+        }
+      </p>
+
+      @if (loading()) {
+      @for (_ of [1,2,3]; track $index) {
+      <div class="skeleton h-16 rounded-2xl mb-2"></div>
+      }
+      }
+
+      @if (!loading() && results().length === 0) {
+      <div class="text-center py-16 text-muted">
+        <div class="text-4xl mb-3">📈</div>
+        <p class="text-sm font-medium">No investable transactions</p>
+        <p class="text-xs mt-1">Try adjusting your filters</p>
+      </div>
+      }
+
+      @if (!loading()) {
+      @for (tx of displayedResults(); track tx.id + '_' + tx.invested + '_' + tx.investable + '_' + tx.displayName + '_'
+      + tx.category) {
+      <div class="tx-item flex items-center justify-between" (click)="openEdit(tx)">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <!-- Icon indicating type (debit/credit/transfer) -->
+          <div class="tx-icon flex-shrink-0" [ngClass]="getIconMeta(tx).cls">
+            {{ getIconMeta(tx).icon }}
+          </div>
+
+          <!-- Details -->
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-sm font-semibold text-white truncate">{{ getDisplayName(tx) }}</span>
+            </div>
+            <div class="text-[11px] text-muted mt-0.5 flex items-center gap-2 flex-wrap">
+              <span>{{ displayDate(tx.date) }}</span>
+              <span class="w-1 h-1 rounded-full bg-white/20"></span>
+              <span>{{ tx.account }}</span>
+              @if (tx.category) {
+              <span class="w-1 h-1 rounded-full bg-white/20"></span>
+              <span
+                class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent/20 text-accent border border-accent/20 tracking-wider uppercase flex-shrink-0">
+                {{ tx.category }}
+              </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Amount and Invested Status -->
+        <div class="text-right flex-shrink-0 flex flex-col items-end gap-1">
+          <span class="text-sm font-bold font-mono text-white">
+            ₹{{ getInvestableAmount(tx) }}
+          </span>
+          <!-- Invested Status Badge -->
+          <span [class]="'px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase ' + (tx.invested 
+                      ? 'bg-credit/10 text-credit border border-credit/20' 
+                      : 'bg-white/5 text-muted border border-white/5')">
+            {{ tx.invested ? 'Invested' : 'Not Invested' }}
+          </span>
+        </div>
+      </div>
+      }
+      }
+
+      @if (results().length > displayedResults().length) {
+      <div class="flex justify-center py-4">
+        <span class="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+      </div>
+      }
+    </div>
+  </div>
+
+  <app-edit-display-name [transaction]="selectedTx()" [isOpen]="isEditing()" (close)="closeEdit()" />
+
+  <app-confirm-dialog [isOpen]="isConfirmInvestAllOpen" title="Mark All as Invested"
+    message="Are you sure you want to mark all un-invested transactions as Invested?" confirmText="Yes, Invest All"
+    type="success" (confirmed)="onInvestAllConfirmed()" (cancelled)="isConfirmInvestAllOpen = false" />
+</div>

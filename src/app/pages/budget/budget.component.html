@@ -107,16 +107,10 @@
 
       <!-- Action buttons -->
       <div class="flex flex-col gap-3 mx-4 mb-6 fade-up">
-        <div class="flex gap-3">
-          <button (click)="openEdit()"
-                  class="flex-1 btn-primary flex items-center justify-center gap-2">
-            ✏️ Edit Budget
-          </button>
-          <button (click)="deleteBudget()"
-                  class="flex-1 btn-danger flex items-center justify-center gap-2">
-            🗑 Delete
-          </button>
-        </div>
+        <button (click)="openEdit()"
+                class="w-full btn-primary flex items-center justify-center gap-2">
+          ✏️ Edit Budget
+        </button>
         <button (click)="clearTransactions()"
                 class="w-full btn-danger flex items-center justify-center gap-2 bg-debit/10 hover:bg-debit/20">
           ⚠️ Clear All Transactions
@@ -214,4 +208,14 @@
     }
 
   } <!-- /!loading -->
+
+  <app-confirm-dialog
+    [isOpen]="isConfirmClearOpen"
+    title="Clear All Transactions"
+    message="Are you sure you want to clear all transactions? This cannot be undone."
+    confirmText="Clear All"
+    type="danger"
+    (confirmed)="onClearConfirmed()"
+    (cancelled)="isConfirmClearOpen = false"
+  />
 </div>

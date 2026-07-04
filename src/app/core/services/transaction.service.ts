@@ -1,29 +1,36 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap, map } from 'rxjs';
+import { BehaviorSubject, Observable, tap, map, of } from 'rxjs';
 import { Transaction, TransactionFilter } from '../models/transaction.model';
 
 @Injectable({ providedIn: 'root' })
 export class TransactionService {
-  private readonly API = 'https://api.npoint.io/e38b788a1721f85a81b3';
+  private readonly API = 'https://expense-tracker-63640-default-rtdb.asia-southeast1.firebasedatabase.app/transactions.json';
   private http = inject(HttpClient);
 
   private _transactions$ = new BehaviorSubject<Transaction[]>([]);
-  private _loading$      = new BehaviorSubject<boolean>(false);
-  private _saving$       = new BehaviorSubject<boolean>(false);
+  private _loading$ = new BehaviorSubject<boolean>(false);
+  private _saving$ = new BehaviorSubject<boolean>(false);
 
   readonly transactions$ = this._transactions$.asObservable();
-  readonly loading$      = this._loading$.asObservable();
-  readonly saving$       = this._saving$.asObservable();
+  readonly loading$ = this._loading$.asObservable();
+  readonly saving$ = this._saving$.asObservable();
 
   // ── Fetch ────────────────────────────────────────────
   load(): Observable<Transaction[]> {
     this._loading$.next(true);
-    return this.http.get<Transaction[]>(this.API).pipe(
+    return this.http.get<Record<string, Transaction>>(this.API).pipe(
+      map(res => {
+        if (!res) return [];
+        return Object.entries(res).map(([fbKey, tx]) => ({
+          ...tx,
+          fbKey
+        }));
+      }),
       tap(txs => {
         this._transactions$.next(txs);
         this._loading$.next(false);
-      }),
+      })
     );
   }
 
@@ -80,10 +87,18 @@ export class TransactionService {
       );
     }
 
-    if (f.date) {
+    if (f.startDate || f.endDate) {
       list = list.filter(t => {
         const d = this.parseDate(t.date);
-        const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        if (f.startDate && ds < f.startDate) return false;
+        if (f.endDate && ds > f.endDate) return false;
+        return true;
+      });
+    } else if (f.date) {
+      list = list.filter(t => {
+        const d = this.parseDate(t.date);
+        const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         return ds === f.date;
       });
     }
@@ -132,16 +147,16 @@ export class TransactionService {
   formatDisplayDate(dateStr: string): string {
     const d = this.parseDate(dateStr);
     const now = new Date();
-    const today   = new Date(now.getFullYear(),  now.getMonth(),  now.getDate());
-    const txDay   = new Date(d.getFullYear(),    d.getMonth(),    d.getDate());
-    const diffMs  = today.getTime() - txDay.getTime();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const txDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffMs = today.getTime() - txDay.getTime();
 
     if (diffMs === 0) {
       const [, timePart] = dateStr.split(', ');
-      const [h, min]     = timePart.split(':');
+      const [h, min] = timePart.split(':');
       const hr = parseInt(h, 10);
       const suffix = hr >= 12 ? 'PM' : 'AM';
-      const h12    = hr % 12 || 12;
+      const h12 = hr % 12 || 12;
       return `Today, ${h12}:${min} ${suffix}`;
     }
     if (diffMs === 86_400_000) return 'Yesterday';
@@ -160,63 +175,84 @@ export class TransactionService {
       return tx.displayName;
     }
     const parts = tx.id.split('/');
-    const last  = parts[parts.length - 1];
+    const last = parts[parts.length - 1];
     return last.length > 2 ? last.replace(/_/g, ' ') : tx.id;
   }
 
-  saveTransactionDetails(txId: string, displayName: string, category: string): Observable<Transaction[]> {
+  saveTransactionDetails(txId: string, displayName: string, category: string, investable: boolean, invested: boolean): Observable<Transaction[]> {
     this._saving$.next(true);
-    const updated = this.snapshot.map(t => {
-      if (t.id === txId) {
-        return { 
-          ...t, 
-          displayName: displayName.trim(), 
-          category: category.trim() || undefined 
-        };
-      }
-      return t;
-    });
-
-    return this.http.post<Transaction[]>(this.API, updated).pipe(
-      tap(() => {
+    const tx = this.snapshot.find(t => t.id === txId);
+    if (!tx || !tx.fbKey) {
+      this._saving$.next(false);
+      return of(this.snapshot);
+    }
+    const url = this.API.replace('.json', `/${tx.fbKey}.json`);
+    const payload = {
+      displayName: displayName.trim(),
+      category: category.trim() || null,
+      investable,
+      invested
+    };
+    return this.http.patch<any>(url, payload).pipe(
+      map(() => {
+        const updated = this.snapshot.map(t => {
+          if (t.id === txId) {
+            return {
+              ...t,
+              displayName: displayName.trim(),
+              category: category.trim() || undefined,
+              investable,
+              invested
+            };
+          }
+          return t;
+        });
         this._transactions$.next(updated);
         this._saving$.next(false);
+        return updated;
       })
     );
   }
 
   deleteTransaction(txId: string): Observable<Transaction[]> {
     this._saving$.next(true);
-    const updated = this.snapshot.filter(t => t.id !== txId);
-
-    return this.http.post<Transaction[]>(this.API, updated).pipe(
-      tap(() => {
+    const tx = this.snapshot.find(t => t.id === txId);
+    if (!tx || !tx.fbKey) {
+      this._saving$.next(false);
+      return of(this.snapshot);
+    }
+    const url = this.API.replace('.json', `/${tx.fbKey}.json`);
+    return this.http.delete<void>(url).pipe(
+      map(() => {
+        const updated = this.snapshot.filter(t => t.id !== txId);
         this._transactions$.next(updated);
         this._saving$.next(false);
+        return updated;
       })
     );
   }
 
   clearAllTransactions(): Observable<Transaction[]> {
     this._saving$.next(true);
-    const updated: Transaction[] = [];
-
-    return this.http.post<Transaction[]>(this.API, updated).pipe(
-      tap(() => {
+    return this.http.delete<void>(this.API).pipe(
+      map(() => {
+        const updated: Transaction[] = [];
         this._transactions$.next(updated);
         this._saving$.next(false);
+        return updated;
       })
     );
   }
 
   addTransaction(tx: Transaction): Observable<Transaction[]> {
     this._saving$.next(true);
-    const updated = [tx, ...this.snapshot];
-
-    return this.http.post<Transaction[]>(this.API, updated).pipe(
-      tap(() => {
+    return this.http.post<{ name: string }>(this.API, tx).pipe(
+      map(res => {
+        const newTx = { ...tx, fbKey: res.name };
+        const updated = [newTx, ...this.snapshot];
         this._transactions$.next(updated);
         this._saving$.next(false);
+        return updated;
       })
     );
   }

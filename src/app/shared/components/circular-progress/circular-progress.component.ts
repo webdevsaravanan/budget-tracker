@@ -21,7 +21,7 @@ import { CommonModule } from '@angular/common';
         <!-- Progress arc -->
         <circle
           fill="none"
-          [attr.stroke]="isOver ? '#ff5f5f' : '#5e7bff'"
+          [attr.stroke]="strokeColor || (isOver ? '#ff5f5f' : '#5e7bff')"
           [attr.stroke-width]="strokeWidth"
           stroke-linecap="round"
           [attr.cx]="cx" [attr.cy]="cy" [attr.r]="radius"
@@ -34,43 +34,86 @@ import { CommonModule } from '@angular/common';
         <!-- Dot indicator -->
         <circle
           [attr.cx]="dotX" [attr.cy]="dotY" r="7"
-          fill="#f5c842"
-          style="filter: drop-shadow(0 0 4px #f5c842);
-                 transition: all 1.2s cubic-bezier(0.4,0,0.2,1)"/>
+          [attr.fill]="dotColor || '#f5c842'"
+          [style.filter]="'drop-shadow(0 0 4px ' + (dotColor || '#f5c842') + ')'"
+          style="transition: all 1.2s cubic-bezier(0.4,0,0.2,1)"/>
       </svg>
 
       <!-- Center content -->
       <div class="absolute inset-0 flex flex-col items-center justify-center">
-        <span class="text-lg leading-none mb-1"
-              [style.color]="isOver ? '#ff5f5f' : '#5e7bff'">↗</span>
-        <span class="text-[32px] font-bold leading-none tracking-tight">
-          ₹{{ amount | number:'1.0-0' }}
-        </span>
-        <span class="text-[11px] text-muted mt-1">total spent</span>
+        @if (mode === 'budget') {
+          <span class="text-lg leading-none mb-1"
+                [style.color]="isOver ? '#ff5f5f' : '#5e7bff'">↗</span>
+          <span class="text-[32px] font-bold leading-none tracking-tight">
+            ₹{{ amount | number:'1.0-0' }}
+          </span>
+          <span class="text-[11px] text-muted mt-1">total spent</span>
+        } @else {
+          <span class="text-xs font-semibold leading-none mb-1.5 text-muted tracking-wider">
+            {{ symbol }}
+          </span>
+          <span class="text-[32px] font-bold leading-none tracking-tight"
+                [class.animate-pulse-attention]="shouldBlink">
+            ₹{{ amount | number:'1.2-2' }}
+          </span>
+          @if (purchasableShares > 0) {
+            <span class="text-[10px] text-credit font-bold mt-1.5 animate-pulse-attention">
+              {{ purchasableShares }} stock{{ purchasableShares > 1 ? 's' : '' }}
+            </span>
+          } @else {
+            <span class="text-[11px] text-muted mt-1.5">Stock Price</span>
+          }
+        }
       </div>
     </div>
   `,
+  styles: [`
+    .animate-pulse-attention {
+      animation: pulseAttention 1.2s infinite ease-in-out;
+    }
+    @keyframes pulseAttention {
+      0%, 100% { opacity: 1; transform: scale(1); color: #ffffff; text-shadow: 0 0 0px transparent; }
+      50% { opacity: 0.65; transform: scale(1.04); color: #32d583; text-shadow: 0 0 8px rgba(50, 213, 131, 0.45); }
+    }
+  `],
 })
 export class CircularProgressComponent implements OnChanges {
-  @Input() amount   = 0;
-  @Input() budget   = 0;
-  @Input() size     = 220;
+  @Input() amount = 0;
+  @Input() budget = 0;
+  @Input() size = 220;
   @Input() strokeWidth = 14;
+  @Input() mode: 'budget' | 'stock' = 'budget';
+  @Input() symbol = '';
+  @Input() strokeColor = '';
+  @Input() dotColor = '';
+  @Input() customProgress = -1; // between 0 and 1
+  @Input() purchasableShares = 0;
+
+  get shouldBlink(): boolean {
+    return this.mode === 'stock' && this.customProgress >= 1;
+  }
 
   cx = 0; cy = 0; radius = 0;
   circumference = 0;
-  dashOffset    = 0;
+  dashOffset = 0;
   dotX = 0; dotY = 0;
   isOver = false;
 
   ngOnChanges() {
     this.cx = this.size / 2;
     this.cy = this.size / 2;
-    this.radius      = (this.size / 2) - (this.strokeWidth / 2) - 2;
+    this.radius = (this.size / 2) - (this.strokeWidth / 2) - 2;
     this.circumference = 2 * Math.PI * this.radius;
 
-    const pct = this.budget > 0 ? Math.min(this.amount / this.budget, 1) : 0;
-    this.isOver    = this.budget > 0 && this.amount > this.budget;
+    let pct = 0;
+    if (this.customProgress >= 0) {
+      pct = Math.min(this.customProgress, 1);
+      this.isOver = false;
+    } else {
+      pct = this.budget > 0 ? Math.min(this.amount / this.budget, 1) : 0;
+      this.isOver = this.budget > 0 && this.amount > this.budget;
+    }
+
     this.dashOffset = this.circumference - pct * this.circumference;
 
     // Dot position (in rotated SVG space)

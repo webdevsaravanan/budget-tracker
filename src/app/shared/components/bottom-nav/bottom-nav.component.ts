@@ -45,7 +45,7 @@ export class BottomNavComponent {
   navItems: NavItem[] = [
     { path: '', icon: '🏠', label: 'Home' },
     { path: 'search', icon: '🔍', label: 'Search' },
-    { path: 'add-transaction', icon: '➕', label: 'Add' },
+    { path: 'investable-transaction', icon: '📈', label: 'Invest' },
     { path: 'budget', icon: '💰', label: 'Budget' },
   ];
 }

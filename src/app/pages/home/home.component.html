@@ -39,18 +39,56 @@
         </button>
       </header>
 
-      <!-- Chart section -->
-      <section class="flex flex-col items-center px-6 pb-6 fade-up">
-        <p class="text-sm text-muted mb-5">
-          Spent in <span class="text-white font-semibold">{{ currentMonthLabel }}</span>
-        </p>
+      <!-- Chart section (swipeable container) -->
+      <section class="flex flex-col items-center pb-6 fade-up">
+        <!-- Swipeable slides -->
+        <div class="w-full flex overflow-x-auto scroll-smooth snap-x snap-mandatory hide-scrollbar"
+             (scroll)="onChartScroll($event)">
+          
+          @for (chartType of chartsOrder; track chartType) {
+            @if (chartType === 'budget') {
+              <!-- Slide: Budget Chart -->
+              <div class="w-full flex-shrink-0 flex flex-col items-center snap-center px-6">
+                <p class="text-sm text-muted mb-5">
+                  Spent in <span class="text-white font-semibold">{{ currentMonthLabel }}</span>
+                </p>
+                <app-circular-progress
+                  [amount]="totalDebit"
+                  [budget]="budget?.amount ?? 0"
+                  [size]="220"
+                  [strokeWidth]="14">
+                </app-circular-progress>
+              </div>
+            } @else {
+              <!-- Slide: Stock Chart -->
+              <div class="w-full flex-shrink-0 flex flex-col items-center snap-center px-6 cursor-pointer" (click)="onStockChartClick()">
+                <p class="text-sm text-muted mb-5">
+                  Available to Invest in <span class="text-white font-semibold">{{ currentMonthLabel }}</span>
+                </p>
+                <app-circular-progress
+                  [amount]="stockPrice"
+                  [budget]="0"
+                  [mode]="'stock'"
+                  [symbol]="stockSymbol"
+                  [customProgress]="stockProgress"
+                  [strokeColor]="stockStrokeColor"
+                  [dotColor]="stockDotColor"
+                  [purchasableShares]="purchasableShares"
+                  [size]="220"
+                  [strokeWidth]="14">
+                </app-circular-progress>
+              </div>
+            }
+          }
+        </div>
 
-        <app-circular-progress
-          [amount]="totalDebit"
-          [budget]="budget?.amount ?? 0"
-          [size]="220"
-          [strokeWidth]="14">
-        </app-circular-progress>
+        <!-- Swipe pagination dots -->
+        <div class="flex gap-1.5 mt-4 justify-center">
+          <span class="w-1.5 h-1.5 rounded-full transition-all duration-200"
+                [class]="activeChartIndex === 0 ? 'w-4 bg-accent' : 'bg-white/20'"></span>
+          <span class="w-1.5 h-1.5 rounded-full transition-all duration-200"
+                [class]="activeChartIndex === 1 ? 'w-4 bg-accent' : 'bg-white/20'"></span>
+        </div>
       </section>
 
       <!-- Stats row -->

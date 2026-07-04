@@ -19,6 +19,13 @@
             class="text-muted hover:text-white transition-colors text-lg leading-none">×</button>
           }
         </div>
+
+        <!-- Add Button -->
+        <button routerLink="/add-transaction"
+                class="w-12 h-12 rounded-2xl flex items-center justify-center border border-white/5 bg-surface text-white/70 hover:text-white transition-colors duration-200"
+                aria-label="Add Transaction">
+          ➕
+        </button>
         
         <!-- Filter Toggle Button -->
         <button (click)="toggleFilters()"
@@ -44,6 +51,8 @@
                 <select [ngModel]="dateMode" (ngModelChange)="onDateModeChange($event)"
                   class="form-input text-sm py-2.5 cursor-pointer pr-8">
                   <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="lastweek">Last week</option>
                   <option value="all">All days</option>
                   <option value="custom">Specific date...</option>
                 </select>
@@ -52,10 +61,18 @@
     
               <!-- Date picker shown when custom is selected -->
               @if (dateMode === 'custom') {
-              <div class="mt-2">
-                <input type="date" [(ngModel)]="filter.date" (ngModelChange)="applyFilters()"
-                  class="form-input text-sm py-2.5">
-              </div>
+                <div class="mt-2.5 flex gap-2">
+                  <div class="flex-1">
+                    <p class="text-[9px] text-muted mb-1">From</p>
+                    <input type="date" [(ngModel)]="filter.startDate" (ngModelChange)="applyFilters()"
+                      class="form-input text-xs py-2 w-full">
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-[9px] text-muted mb-1">To</p>
+                    <input type="date" [(ngModel)]="filter.endDate" (ngModelChange)="applyFilters()"
+                      class="form-input text-xs py-2 w-full">
+                  </div>
+                </div>
               }
             </div>
             <!-- Month -->

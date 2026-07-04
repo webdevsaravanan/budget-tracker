@@ -7,11 +7,12 @@ import { BudgetService }      from '../../core/services/budget.service';
 import { TransactionService } from '../../core/services/transaction.service';
 import { ToastService }       from '../../core/services/toast.service';
 import { Budget, BudgetStats } from '../../core/models/budget.model';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-budget',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
   templateUrl: './budget.component.html',
 })
 export class BudgetComponent implements OnInit {
@@ -24,6 +25,7 @@ export class BudgetComponent implements OnInit {
   saving     = signal(false);
   showForm   = signal(false);
   isEditing  = signal(false);
+  isConfirmClearOpen = false;
 
   // Form fields
   inputAmount = 0;
@@ -112,19 +114,17 @@ export class BudgetComponent implements OnInit {
     });
   }
 
-  deleteBudget() {
-    if (!confirm('Delete your current budget?')) return;
-    this.budgetService.delete().subscribe({
-      next: () => this.toastService.show('Budget deleted', 'error'),
-      error: () => this.toastService.show('Failed to delete', 'error'),
-    });
-  }
+
 
   clearTransactions() {
-    if (!confirm('Are you sure you want to clear all transactions? This cannot be undone.')) return;
+    this.isConfirmClearOpen = true;
+  }
+
+  onClearConfirmed() {
+    this.isConfirmClearOpen = false;
     this.txService.clearAllTransactions().subscribe({
       next: () => this.toastService.show('All transactions cleared! 🧹', 'success'),
-      error: () => this.toastService.show('Failed to clear transactions', 'error'),
+      error: () => this.toastService.show('Failed to clear transactions', 'error')
     });
   }
 

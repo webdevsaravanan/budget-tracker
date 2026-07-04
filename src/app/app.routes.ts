@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/search/search.component').then(m => m.SearchComponent),
   },
   {
+    path: 'investable-transaction',
+    loadComponent: () => import('./pages/investable-transaction/investable-transaction.component').then(m => m.InvestableTransactionComponent),
+  },
+  {
     path: 'add-transaction',
     loadComponent: () => import('./pages/add-transaction/add-transaction.component').then(m => m.AddTransactionComponent),
   },

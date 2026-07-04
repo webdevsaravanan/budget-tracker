@@ -5,10 +5,12 @@ import { Transaction } from '../../../core/models/transaction.model';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { ToastService } from '../../../core/services/toast.service';
 
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+
 @Component({
   selector: 'app-edit-display-name',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ConfirmDialogComponent],
   template: `
     @if (isOpen && transaction) {
       <div class="fixed inset-0 z-[9999] flex items-center justify-center px-4 bg-black/60 backdrop-blur-xs transition-opacity duration-300" 
@@ -63,6 +65,43 @@ import { ToastService } from '../../../core/services/toast.service';
             />
           </div>
 
+          <!-- Toggles Section -->
+          <div class="flex flex-col gap-3.5 bg-white/5 border border-white/5 rounded-2xl p-4">
+            <!-- Investable Toggle -->
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-white tracking-wide">Investable</span>
+                <span class="text-[10px] text-muted">Is this transaction eligible for investing?</span>
+              </div>
+              <button type="button" 
+                      (click)="tempInvestable = !tempInvestable"
+                      [class]="'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ' + (tempInvestable ? 'bg-accent' : 'bg-white/10')">
+                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-all duration-200 ease-in-out"
+                      [class.translate-x-4]="tempInvestable"
+                      [class.translate-x-0]="!tempInvestable">
+                </span>
+              </button>
+            </div>
+
+            <div class="h-px bg-white/5"></div>
+
+            <!-- Invested Toggle -->
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-white tracking-wide">Invested</span>
+                <span class="text-[10px] text-muted">Has this amount been invested?</span>
+              </div>
+              <button type="button" 
+                      (click)="tempInvested = !tempInvested"
+                      [class]="'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ' + (tempInvested ? 'bg-accent' : 'bg-white/10')">
+                <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-all duration-200 ease-in-out"
+                      [class.translate-x-4]="tempInvested"
+                      [class.translate-x-0]="!tempInvested">
+                </span>
+              </button>
+            </div>
+          </div>
+
           <!-- Actions -->
           <div class="flex flex-col gap-2.5 mt-2">
             <div class="flex gap-3">
@@ -98,6 +137,16 @@ import { ToastService } from '../../../core/services/toast.service';
         </div>
       </div>
     }
+
+    <app-confirm-dialog
+      [isOpen]="isConfirmDeleteOpen"
+      title="Delete Transaction"
+      message="Are you sure you want to delete this transaction?"
+      confirmText="Delete"
+      type="danger"
+      (confirmed)="onDeleteConfirmed()"
+      (cancelled)="isConfirmDeleteOpen = false"
+    />
   `,
   styles: [`
     .animate-pop-in {
@@ -119,13 +168,18 @@ export class EditDisplayNameComponent implements OnChanges {
 
   tempName = '';
   tempCategory = '';
+  tempInvestable = true;
+  tempInvested = false;
   isSaving = false;
   isDeleting = false;
+  isConfirmDeleteOpen = false;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.isOpen && this.transaction) {
       this.tempName = this.transaction.displayName || '';
       this.tempCategory = this.transaction.category || '';
+      this.tempInvestable = this.transaction.investable !== false;
+      this.tempInvested = !!this.transaction.invested;
       this.isSaving = false;
       this.isDeleting = false; // Reset deleting state when opened
     }
@@ -143,7 +197,7 @@ export class EditDisplayNameComponent implements OnChanges {
     const newCategory = this.tempCategory.trim();
 
     this.isSaving = true;
-    this.txService.saveTransactionDetails(this.transaction.id, newName, newCategory).subscribe({
+    this.txService.saveTransactionDetails(this.transaction.id, newName, newCategory, this.tempInvestable, this.tempInvested).subscribe({
       next: () => {
         this.isSaving = false;
         this.toastService.show('Transaction details updated!', 'success');
@@ -159,21 +213,25 @@ export class EditDisplayNameComponent implements OnChanges {
 
   onDelete(): void {
     if (!this.transaction || this.isSaving || this.isDeleting) return;
+    this.isConfirmDeleteOpen = true;
+  }
 
-    if (confirm('Are you sure you want to delete this transaction?')) {
-      this.isDeleting = true;
-      this.txService.deleteTransaction(this.transaction.id).subscribe({
-        next: () => {
-          this.isDeleting = false;
-          this.toastService.show('Transaction deleted successfully', 'success');
-          this.close.emit();
-        },
-        error: (err) => {
-          this.isDeleting = false;
-          this.toastService.show('Failed to delete transaction', 'error');
-          console.error('Error deleting transaction:', err);
-        }
-      });
-    }
+  onDeleteConfirmed(): void {
+    this.isConfirmDeleteOpen = false;
+    if (!this.transaction || this.isSaving || this.isDeleting) return;
+
+    this.isDeleting = true;
+    this.txService.deleteTransaction(this.transaction.id).subscribe({
+      next: () => {
+        this.isDeleting = false;
+        this.toastService.show('Transaction deleted successfully', 'success');
+        this.close.emit();
+      },
+      error: (err) => {
+        this.isDeleting = false;
+        this.toastService.show('Failed to delete transaction', 'error');
+        console.error('Error deleting transaction:', err);
+      }
+    });
   }
 }

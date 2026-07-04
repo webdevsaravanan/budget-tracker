@@ -1,10 +1,11 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, catchError } from 'rxjs';
 
 import { TransactionService } from '../../core/services/transaction.service';
 import { BudgetService }      from '../../core/services/budget.service';
+import { TrackStockService }  from '../../core/services/track-stock.service';
 import { CircularProgressComponent } from '../../shared/components/circular-progress/circular-progress.component';
 import { TransactionItemComponent }  from '../../shared/components/transaction-item/transaction-item.component';
 import { EditDisplayNameComponent } from '../../shared/components/edit-display-name/edit-display-name.component';
@@ -19,6 +20,7 @@ import { Transaction } from '../../core/models/transaction.model';
 export class HomeComponent implements OnInit {
   private txService     = inject(TransactionService);
   private budgetService = inject(BudgetService);
+  private trackStockService = inject(TrackStockService);
   private router        = inject(Router);
 
   loading        = signal(true);
@@ -28,8 +30,19 @@ export class HomeComponent implements OnInit {
   selectedTx = signal<Transaction | null>(null);
   isEditing  = signal(false);
 
+  stockSymbol = 'PGINVIT.BSE';
+  stockPrice = 94.03;
+  activeChartIndex = 0;
+
   get budget()       { return this.budgetService.snapshot; }
   get transactions() { return this.txService.snapshot; }
+
+  get chartsOrder(): ('budget' | 'stock')[] {
+    if (this.notinvestedAmount >= this.stockPrice) {
+      return ['stock', 'budget'];
+    }
+    return ['budget', 'stock'];
+  }
 
   get filteredTx(): Transaction[] {
     return this.txService.filterByMonth(this.selectedMonth());
@@ -66,7 +79,16 @@ export class HomeComponent implements OnInit {
     forkJoin([
       this.txService.load(),
       this.budgetService.load(),
-    ]).subscribe(() => {
+      this.trackStockService.getStockQuote().pipe(
+        catchError(err => {
+          console.error('Error loading stock quote:', err);
+          return of({ symbol: 'PGINVIT.BSE', price: 94.03 });
+        })
+      )
+    ]).subscribe(([_, __, stock]) => {
+      this.stockSymbol = stock.symbol;
+      this.stockPrice = stock.price;
+
       const months = this.txService.getAvailableMonths();
       this.availableMonths.set(months);
 
@@ -78,11 +100,60 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  get notinvestedAmount(): number {
+    return this.filteredTx
+      .filter(t => t.investable !== false && !t.invested)
+      .reduce((sum, t) => {
+        const amt = parseFloat(t.amount) || 0;
+        return sum + Math.round(amt * 0.1);
+      }, 0);
+  }
+
+  get purchasableShares(): number {
+    if (this.stockPrice <= 0) return 0;
+    return Math.floor(this.notinvestedAmount / this.stockPrice);
+  }
+
+  get stockProgress(): number {
+    if (this.stockPrice <= 0) return 0;
+    if (this.notinvestedAmount >= this.stockPrice) {
+      return 1.0;
+    }
+    return this.notinvestedAmount / this.stockPrice;
+  }
+
+  get stockStrokeColor(): string {
+    return this.notinvestedAmount >= this.stockPrice ? '#32d583' : '#ff5f5f';
+  }
+
+  get stockDotColor(): string {
+    return this.notinvestedAmount >= this.stockPrice ? '#32d583' : '#f5c842';
+  }
+
+  onChartScroll(event: Event) {
+    const element = event.target as HTMLElement;
+    const width = element.clientWidth;
+    if (width > 0) {
+      this.activeChartIndex = Math.round(element.scrollLeft / width);
+    }
+  }
+
   selectMonth(key: string) {
     this.selectedMonth.set(key);
   }
 
   goSearch() { this.router.navigate(['/search']); }
+
+  onStockChartClick() {
+    const isGreen = this.notinvestedAmount >= this.stockPrice;
+    const isAndroid = /android/i.test(navigator.userAgent);
+
+    if (isGreen && isAndroid) {
+      window.location.href = 'intent://#Intent;package=com.zerodha.kite3;scheme=kite;end;';
+    } else {
+      this.router.navigate(['/investable-transaction']);
+    }
+  }
 
   openEdit(tx: Transaction) {
     this.selectedTx.set(tx);

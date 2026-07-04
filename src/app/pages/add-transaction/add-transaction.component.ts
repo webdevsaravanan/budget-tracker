@@ -186,6 +186,8 @@ export class AddTransactionComponent implements OnInit {
       transactionType: this.form.transactionType,
       displayName: this.form.displayName.trim() || undefined,
       category: this.form.category.trim() || undefined,
+      investable: true,
+      invested: false,
     };
 
     this.txService.addTransaction(newTx).subscribe({
