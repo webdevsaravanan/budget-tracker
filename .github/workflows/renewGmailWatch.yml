@@ -24,7 +24,7 @@ jobs:
             -d "grant_type=refresh_token" \
             | jq -r '.access_token')
 
-echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
+          echo "ACCESS_TOKEN=$ACCESS_TOKEN" >> $GITHUB_ENV
 
       - name: Renew Gmail Watch
         run: |
